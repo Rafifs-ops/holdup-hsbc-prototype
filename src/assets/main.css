@@ -26,6 +26,17 @@
   --positive: #0f7a4a;
   --positive-tint: #e8f5ee;
 
+  /* Status Saldo Aman — hijau aman / kuning menipis / merah terlampaui */
+  --status-safe: #16a34a;
+  --status-safe-tint: #e7f6ec;
+  --status-safe-deep: #15803d;
+  --status-low: #d97706;
+  --status-low-tint: #fdf3e3;
+  --status-low-deep: #b45309;
+  --status-over: #db0011;
+  --status-over-tint: #fdeceb;
+  --status-over-deep: #8c000b;
+
   /* Radius & elevation */
   --r-sm: 10px;
   --r-md: 14px;

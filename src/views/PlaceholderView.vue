@@ -3,12 +3,10 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import AppIcon from '@/components/AppIcon.vue'
-import { useExpenseFlow } from '@/composables/useExpenseFlow'
 
 /** Landing page for menus outside the prototype focus, kept visually consistent. */
 const route = useRoute()
 const router = useRouter()
-const { openEntry } = useExpenseFlow()
 
 const meta = computed(() => ({
   title: route.meta?.title || 'Segera hadir',
@@ -17,7 +15,6 @@ const meta = computed(() => ({
   body: route.meta?.body || 'Fitur ini belum termasuk dalam prototipe HoldUp!.',
 }))
 
-const showSimulationCta = computed(() => route.name === 'pay')
 const skeletonRows = [1, 2, 3]
 </script>
 
@@ -44,15 +41,6 @@ const skeletonRows = [1, 2, 3]
     </section>
 
     <div class="placeholder__actions">
-      <button
-        v-if="showSimulationCta"
-        type="button"
-        class="btn btn--primary btn--block"
-        @click="openEntry()"
-      >
-        <AppIcon name="bolt" :size="17" />
-        Coba simulasi pembayaran
-      </button>
       <button type="button" class="btn btn--ghost btn--block" @click="router.push('/')">
         Kembali ke dashboard
       </button>

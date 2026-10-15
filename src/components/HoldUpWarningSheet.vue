@@ -7,7 +7,7 @@ import { useMoneySheets } from '@/composables/useMoneySheets'
 
 /**
  * Jeda HoldUp!: satu sheet ringkas, tanpa modal bertumpuk dan tanpa langkah
- * konfirmasi tambahan. Pengguna tetap bebas melanjutkan pembelian.
+ * konfirmasi tambahan. Pengguna tetap bebas melanjutkan pembayaran.
  */
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -21,16 +21,26 @@ const { openBreakdown } = useMoneySheets()
 
 const rows = computed(() => {
   if (!props.purchase) return []
-  return [
-    { label: 'Pembelian', value: props.purchase.name },
-    { label: 'Nominal', value: formatRupiah(props.purchase.amount) },
-    { label: 'Saldo Aman saat ini', value: formatRupiah(props.purchase.safeBefore) },
-    {
-      label: 'Saldo Aman setelah pembelian',
-      value: formatRupiah(props.purchase.safeAfter),
-      emphasize: props.purchase.safeAfter < 0,
-    },
+  const purchase = props.purchase
+  const list = [
+    { label: 'Pembayaran', value: purchase.name },
+    { label: 'Nominal', value: formatRupiah(purchase.amount) },
   ]
+  if (purchase.roundUp > 0) {
+    list.push({
+      label: 'Pembulatan Otomatis',
+      value: `+${formatRupiah(purchase.roundUp)}`,
+      tone: 'save',
+    })
+    list.push({ label: 'Total dana yang dialokasikan', value: formatRupiah(purchase.total) })
+  }
+  list.push({ label: 'Saldo Aman saat ini', value: formatRupiah(purchase.safeBefore) })
+  list.push({
+    label: 'Saldo Aman setelah pembayaran',
+    value: formatRupiah(purchase.safeAfter),
+    emphasize: purchase.safeAfter < 0,
+  })
+  return list
 })
 
 const shortfallText = computed(() =>
@@ -52,9 +62,9 @@ function seeDetails() {
           <AppIcon name="shield" :size="16" />
           HoldUp!
         </span>
-        <h2 class="holdup__title">Sebentar, ini melewati Saldo Aman.</h2>
+        <h2 class="holdup__title">Sebentar, Saldo Aman kamu akan terlampaui.</h2>
         <p class="holdup__lead">
-          Pembelian ini {{ shortfallText }} di atas Saldo Aman kamu. Kamu tetap bisa melanjutkan.
+          Pembayaran ini {{ shortfallText }} di atas Saldo Aman kamu. Kamu tetap bisa melanjutkan.
         </p>
       </div>
     </template>
@@ -63,14 +73,32 @@ function seeDetails() {
       <dl class="rows">
         <div v-for="row in rows" :key="row.label" class="rows__item">
           <dt>{{ row.label }}</dt>
-          <dd class="tnum" :class="{ 'rows__value--negative': row.emphasize }">{{ row.value }}</dd>
+          <dd
+            class="tnum"
+            :class="{
+              'rows__value--negative': row.emphasize,
+              'rows__value--save': row.tone === 'save',
+            }"
+          >
+            {{ row.value }}
+          </dd>
         </div>
       </dl>
+
+      <p
+        v-if="purchase?.projectedStatus"
+        class="holdup__status"
+        :class="`holdup__status--${purchase.projectedStatus.key}`"
+      >
+        <AppIcon :name="purchase.projectedStatus.icon" :size="15" />
+        <span>Status setelah pembayaran: {{ purchase.projectedStatus.label }}</span>
+      </p>
 
       <p class="holdup__note">
         <AppIcon name="info" :size="16" />
         <span>
           Kalau kamu lanjutkan, saldo berkurang dan jatah harian bulan ini ikut menyesuaikan.
+          Pembayaran dan alokasi Tabungan tetap tercatat terpisah.
         </span>
       </p>
 
@@ -173,6 +201,36 @@ function seeDetails() {
 
 .rows__value--negative {
   color: var(--brand);
+}
+
+.rows__value--save {
+  color: var(--positive);
+}
+
+.holdup__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.holdup__status--safe {
+  background: var(--status-safe-tint);
+  color: var(--status-safe-deep);
+}
+
+.holdup__status--low {
+  background: var(--status-low-tint);
+  color: var(--status-low-deep);
+}
+
+.holdup__status--over {
+  background: var(--status-over-tint);
+  color: var(--status-over-deep);
 }
 
 .holdup__note {

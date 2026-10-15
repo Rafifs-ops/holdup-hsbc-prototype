@@ -30,6 +30,7 @@ export function buildDemoSettings() {
     ...DEMO_USER,
     totalBalance: DEMO_TOTALS.totalBalance,
     savingsTarget: DEMO_TOTALS.savingsTarget,
+    autoRoundupEnabled: false,
     onboarded: true,
     onboardedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),

@@ -5,30 +5,15 @@ import { storeToRefs } from 'pinia'
 import BottomNavigation from '@/components/BottomNavigation.vue'
 import ToastStack from '@/components/ToastStack.vue'
 import AppIcon from '@/components/AppIcon.vue'
-import ExpenseEntrySheet from '@/components/ExpenseEntrySheet.vue'
-import HoldUpWarningSheet from '@/components/HoldUpWarningSheet.vue'
 import BalanceSettingsSheet from '@/components/BalanceSettingsSheet.vue'
 import PocketBreakdownSheet from '@/components/PocketBreakdownSheet.vue'
-import { useExpenseFlow } from '@/composables/useExpenseFlow'
 import { useFinanceStore } from '@/stores/finance'
 import { useMissionsStore } from '@/stores/missions'
 
 /**
- * Alur pengeluaran dan pengaturan saldo dimount tepat sekali di sini; halaman
- * mana pun membukanya lewat composable bersama.
+ * Sheet pengaturan saldo dimount tepat sekali di sini; halaman mana pun
+ * membukanya lewat composable bersama. Alur Bayar berdiri sendiri di PayView.
  */
-const {
-  entryOpen,
-  warningOpen,
-  intent,
-  busy,
-  closeEntry,
-  submitExpense,
-  confirmPurchase,
-  cancelPurchase,
-  closeWarning,
-} = useExpenseFlow()
-
 const finance = useFinanceStore()
 const missions = useMissionsStore()
 const route = useRoute()
@@ -66,23 +51,6 @@ async function retryBoot() {
     </template>
 
     <ToastStack />
-
-    <ExpenseEntrySheet
-      :open="entryOpen"
-      :prefill="intent"
-      :busy="busy"
-      @close="closeEntry"
-      @submit="submitExpense"
-    />
-
-    <HoldUpWarningSheet
-      :open="warningOpen"
-      :purchase="intent"
-      :busy="busy"
-      @confirm="confirmPurchase"
-      @cancel="cancelPurchase"
-      @close="closeWarning"
-    />
 
     <BalanceSettingsSheet />
     <PocketBreakdownSheet />

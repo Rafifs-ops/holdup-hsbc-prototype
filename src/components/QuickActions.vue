@@ -1,50 +1,29 @@
 <script setup>
 import AppIcon from './AppIcon.vue'
-import { useExpenseFlow } from '@/composables/useExpenseFlow'
-import { useMoneySheets } from '@/composables/useMoneySheets'
 
 /**
- * Maksimal empat pintasan, dan dua di antaranya adalah aksi inti HoldUp!:
- * mencatat pengeluaran dan mengatur saldo.
+ * Pintasan perbankan pada dashboard: Transfer, Bayar, Top Up, dan Lainnya.
+ * Ukuran ikon dan label seragam supaya terbaca cepat, tanpa mengalahkan
+ * card Saldo Aman di atasnya.
  */
-const { openEntry } = useExpenseFlow()
-const { openBalance } = useMoneySheets()
+const actions = [
+  { label: 'Transfer', icon: 'send', to: '/transfer' },
+  { label: 'Bayar', icon: 'card', to: '/bayar' },
+  { label: 'Top Up', icon: 'plus', to: '/topup' },
+  { label: 'Lainnya', icon: 'grid', to: '/layanan' },
+]
 </script>
 
 <template>
   <section aria-labelledby="quick-actions-heading">
     <h2 id="quick-actions-heading" class="sr-only">Aksi cepat</h2>
     <ul class="quick">
-      <li>
-        <button type="button" class="quick__item" @click="openEntry()">
+      <li v-for="action in actions" :key="action.to">
+        <RouterLink :to="action.to" class="quick__item">
           <span class="quick__icon" aria-hidden="true">
-            <AppIcon name="bolt" :size="19" />
+            <AppIcon :name="action.icon" :size="19" />
           </span>
-          <span class="quick__label">Catat pengeluaran</span>
-        </button>
-      </li>
-      <li>
-        <button type="button" class="quick__item" @click="openBalance">
-          <span class="quick__icon" aria-hidden="true">
-            <AppIcon name="wallet" :size="19" />
-          </span>
-          <span class="quick__label">Atur saldo</span>
-        </button>
-      </li>
-      <li>
-        <RouterLink to="/topup" class="quick__item">
-          <span class="quick__icon" aria-hidden="true">
-            <AppIcon name="plus" :size="19" />
-          </span>
-          <span class="quick__label">Top Up</span>
-        </RouterLink>
-      </li>
-      <li>
-        <RouterLink to="/layanan" class="quick__item">
-          <span class="quick__icon" aria-hidden="true">
-            <AppIcon name="grid" :size="19" />
-          </span>
-          <span class="quick__label">Semua layanan</span>
+          <span class="quick__label">{{ action.label }}</span>
         </RouterLink>
       </li>
     </ul>

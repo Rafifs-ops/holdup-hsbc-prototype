@@ -10,17 +10,15 @@ import { formatRupiah } from '@/utils/format'
 import { monthNameLong } from '@/utils/date'
 import { useFinanceStore } from '@/stores/finance'
 import { useMissionsStore } from '@/stores/missions'
-import { useExpenseFlow } from '@/composables/useExpenseFlow'
 import { useMoneySheets } from '@/composables/useMoneySheets'
 
 /**
  * Halaman penjelasan HoldUp!: apa itu Saldo Aman, bagaimana rumusnya, dan apa
- * yang terjadi ketika sebuah pembelian melewatinya.
+ * yang terjadi ketika sebuah pembayaran melewatinya.
  */
 const finance = useFinanceStore()
 const missions = useMissionsStore()
 const router = useRouter()
-const { openEntry } = useExpenseFlow()
 const { openBalance, openBreakdown } = useMoneySheets()
 
 const { safeBalanceBreakdown, safeBalance, dailyAllowance, remainingDays, isOverdrawn, amountsHidden, status } =
@@ -42,7 +40,7 @@ const steps = [
   },
   {
     icon: 'bolt',
-    title: 'Setiap pembelian dibandingkan',
+    title: 'Setiap pembayaran dibandingkan',
     body: 'Sebelum transaksi disimpan, nominalnya dibandingkan dengan Saldo Aman saat itu.',
   },
   {
@@ -109,8 +107,8 @@ const steps = [
         />
       </section>
 
-      <div class="notice" :class="isOverdrawn ? 'notice--warn' : 'notice--info'" role="status">
-        <AppIcon :name="isOverdrawn ? 'alert' : 'info'" :size="17" />
+      <div class="notice" :class="`notice--${status.key}`" role="status">
+        <AppIcon :name="status.icon" :size="17" />
         <span>{{ status.message }}</span>
       </div>
 
@@ -130,9 +128,9 @@ const steps = [
       </section>
 
       <section class="actions" aria-label="Aksi HoldUp">
-        <button type="button" class="btn btn--primary btn--block" @click="openEntry()">
-          <AppIcon name="bolt" :size="17" />
-          Coba simulasi pembelian
+        <button type="button" class="btn btn--primary btn--block" @click="router.push('/bayar')">
+          <AppIcon name="card" :size="17" />
+          Coba simulasi pembayaran
         </button>
         <button type="button" class="btn btn--ghost btn--block" @click="router.push('/misi')">
           Lihat misi tabungan
@@ -199,6 +197,21 @@ const steps = [
 
 .is-negative {
   color: var(--brand) !important;
+}
+
+.notice--safe {
+  background: var(--status-safe-tint);
+  color: var(--status-safe-deep);
+}
+
+.notice--low {
+  background: var(--status-low-tint);
+  color: var(--status-low-deep);
+}
+
+.notice--over {
+  background: var(--status-over-tint);
+  color: var(--status-over-deep);
 }
 
 .breakdown__formula {

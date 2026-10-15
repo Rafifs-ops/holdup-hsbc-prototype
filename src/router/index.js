@@ -66,13 +66,8 @@ const router = createRouter({
     {
       path: '/bayar',
       name: 'pay',
-      component: () => import('@/views/PlaceholderView.vue'),
-      meta: {
-        title: 'Bayar',
-        subtitle: 'Bayar tagihan dan merchant',
-        icon: 'card',
-        body: 'Pembayaran tagihan dan merchant akan memakai jeda HoldUp! yang sama seperti saat mencatat pengeluaran.',
-      },
+      component: () => import('@/views/PayView.vue'),
+      meta: { title: 'Bayar', subtitle: 'Bayar tagihan dan merchant' },
     },
     {
       path: '/layanan',

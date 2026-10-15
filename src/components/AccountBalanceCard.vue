@@ -51,7 +51,7 @@ const toggleLabel = computed(() =>
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  background: var(--surface);
+  background: #db0011;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
 }
@@ -63,7 +63,7 @@ const toggleLabel = computed(() =>
 .account__label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink-3);
+  color: #ffffff;
 }
 
 .account__amount {
@@ -71,6 +71,7 @@ const toggleLabel = computed(() =>
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
 .account__actions {
@@ -104,11 +105,6 @@ const toggleLabel = computed(() =>
   border: 0;
   border-radius: var(--r-pill);
   background: transparent;
-  color: var(--ink-2);
-}
-
-.account__toggle:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  color: #ffffff;
 }
 </style>

@@ -27,10 +27,6 @@ const remainingText = computed(
       <p class="daily__label">Jatah hari ini</p>
       <p class="daily__value tnum">{{ allowanceText }}</p>
     </div>
-    <div class="daily__block daily__block--right">
-      <p class="daily__label">Sisa hari bulan ini</p>
-      <p class="daily__value daily__value--muted tnum">{{ remainingText }}</p>
-    </div>
   </div>
 </template>
 

@@ -1,4 +1,5 @@
 import { db, META_KEY, POCKET_KEYS, SETTINGS_KEY } from '@/db'
+import { computeRoundUp } from '@/utils/roundup'
 import {
   DEMO_USER,
   SCHEMA_VERSION,
@@ -92,6 +93,7 @@ export async function migrateLegacyData() {
       // Nominal sisihan khusus belum ada di versi lama, jadi dimulai dari nol
       // supaya tidak ada angka yang tiba-tiba berubah.
       savingsTarget: 0,
+      autoRoundupEnabled: false,
       onboarded: true,
       onboardedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -222,6 +224,7 @@ export async function seedManualData(draft = {}) {
     accountLabel: DEMO_USER.accountLabel,
     totalBalance,
     savingsTarget,
+    autoRoundupEnabled: false,
     onboarded: true,
     onboardedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -320,12 +323,22 @@ export async function recordIncome({ name, amount, category = 'topup', note = ''
 }
 
 /**
- * Mencatat pengeluaran dan mengurangi total saldo dalam satu transaksi Dexie.
- * Saldo Aman boleh jadi negatif: HoldUp! mengingatkan, bukan memblokir.
+ * Menyimpan pembayaran dan — bila Pembulatan Otomatis aktif — alokasi selisih
+ * ke kantong Tabungan dalam SATU transaksi Dexie.
+ *
+ *  - Pembayaran tercatat sebesar nominal asli (mis. Rp21.700).
+ *  - Selisih pembulatan (mis. Rp300) tercatat sebagai transaksi internal ke Tabungan.
+ *  - Total saldo berkurang sebesar nominal pembayaran; kantong Tabungan bertambah
+ *    sebesar selisih. Saldo Aman dihitung ulang dari data, bukan ditambah manual,
+ *    sehingga selisih tidak pernah dihitung dua kali.
+ *
+ * Status pembulatan dibaca langsung dari settings di dalam transaksi supaya UI
+ * dan database tidak bisa berbeda. Kalau salah satu penulisan gagal, seluruh
+ * perubahan dibatalkan (saldo, kantong, riwayat tetap utuh).
  */
-export async function recordExpense({ name, amount, category = 'lainnya', note = '' } = {}) {
+export async function recordPayment({ name, amount, category = 'belanja', note = '' } = {}) {
   const value = toAmount(amount)
-  if (value <= 0) return { ok: false, error: 'Nominal harus lebih besar dari Rp0.' }
+  if (value <= 0) return { ok: false, error: 'Nominal pembayaran harus lebih besar dari Rp0.' }
 
   const result = await db.transaction(
     'rw',
@@ -334,16 +347,16 @@ export async function recordExpense({ name, amount, category = 'lainnya', note =
     db.transactions,
     async () => {
       const current = (await db.settings.get(SETTINGS_KEY)) || buildDemoSettings()
-      const pocketRows = await db.pockets.toArray()
-      const pockets = pocketMapFromRows(pocketRows)
+      const pockets = pocketMapFromRows(await db.pockets.toArray())
       const safeBefore = computeSafeBalance(current, pockets)
+      const roundUp = current.autoRoundupEnabled ? computeRoundUp(value).roundUpSavings : 0
 
       const next = { ...current, totalBalance: toAmount(current.totalBalance) - value }
       await db.settings.put(next)
 
-      const row = {
-        id: newId('out'),
-        name: String(name || 'Pengeluaran').trim() || 'Pengeluaran',
+      const paymentRow = {
+        id: newId('pay'),
+        name: String(name || 'Pembayaran').trim() || 'Pembayaran',
         amount: value,
         direction: 'out',
         type: 'expense',
@@ -351,19 +364,56 @@ export async function recordExpense({ name, amount, category = 'lainnya', note =
         note,
         date: new Date().toISOString(),
       }
-      await db.transactions.put(row)
+      await db.transactions.put(paymentRow)
+
+      const rows = [paymentRow]
+      if (roundUp > 0) {
+        pockets.savings += roundUp
+        await db.pockets.put({ key: 'savings', amount: pockets.savings })
+        const allocationRow = {
+          id: newId('alloc'),
+          name: `Pembulatan otomatis • ${paymentRow.name}`,
+          amount: roundUp,
+          direction: 'internal',
+          type: 'allocation',
+          category: 'tabungan',
+          note: 'Sisihan otomatis dari pembulatan pembayaran.',
+          date: new Date().toISOString(),
+        }
+        await db.transactions.put(allocationRow)
+        rows.push(allocationRow)
+      }
 
       return {
-        transaction: row,
+        transactions: rows,
+        roundUp,
+        totalBalance: toAmount(next.totalBalance),
         safeBefore,
         safeAfter: computeSafeBalance(next, pockets),
-        totalBalance: toAmount(next.totalBalance),
-        shortfall: Math.max(0, value - safeBefore),
       }
     },
   )
 
   return { ok: true, error: '', ...result }
+}
+
+/**
+ * Menyimpan preferensi Pembulatan Otomatis ke IndexedDB supaya status fitur
+ * tetap konsisten setelah refresh atau aplikasi dibuka kembali.
+ */
+export async function saveAutoRoundup(enabled) {
+  const result = await db.transaction('rw', db.settings, async () => {
+    const current = (await db.settings.get(SETTINGS_KEY)) || buildDemoSettings()
+    const next = {
+      ...current,
+      autoRoundupEnabled: Boolean(enabled),
+      updatedAt: new Date().toISOString(),
+    }
+    await db.settings.put(next)
+    return next.autoRoundupEnabled
+  })
+
+  return { ok: true, enabled: result }
 }
 
 /**

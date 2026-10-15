@@ -2,13 +2,15 @@ import { computed, onScopeDispose, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { daysRemainingInMonth } from '@/utils/date'
 import { POCKET_DEFS, SAVINGS_TARGET_DEF } from '@/utils/pockets'
+import { dailyAllowanceFor, resolveSafeStatus } from '@/utils/safeStatus'
 import {
   allocateToSavings as persistAllocation,
   initDatabase,
   loadSnapshot,
-  recordExpense as persistExpense,
   recordIncome as persistIncome,
+  recordPayment as persistPayment,
   resetToDemo as persistResetToDemo,
+  saveAutoRoundup,
   saveBalanceSettings,
 } from '@/services/financeService'
 
@@ -34,6 +36,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const emergencyPocket = ref(0)
   const savingsTarget = ref(0)
   const onboarded = ref(false)
+  const autoRoundupEnabled = ref(false)
   const transactions = ref([])
   const amountsHidden = ref(false)
 
@@ -65,33 +68,17 @@ export const useFinanceStore = defineStore('finance', () => {
   )
   const isOverdrawn = computed(() => safeBalance.value < 0)
   const remainingDays = computed(() => daysRemainingInMonth(now.value))
-  const dailyAllowance = computed(() =>
-    safeBalance.value > 0 ? Math.floor(safeBalance.value / remainingDays.value) : 0,
-  )
+  const dailyAllowance = computed(() => dailyAllowanceFor(safeBalance.value, remainingDays.value))
   const allocationExceedsBalance = computed(() => totalAllocated.value > totalBalance.value)
 
-  const status = computed(() => {
-    if (isOverdrawn.value) {
-      return {
-        tone: 'danger',
-        label: 'Saldo Aman terlampaui',
-        message:
-          'Saldo Aman kamu sudah lewat batas aman. Jatah harian Rp0 sampai kamu menambah saldo atau mengurangi sisihan.',
-      }
-    }
-    if (totalBalance.value > 0 && safeBalance.value < totalBalance.value * 0.15) {
-      return {
-        tone: 'warn',
-        label: 'Mulai menipis',
-        message: 'Sisa Saldo Aman kamu sudah tipis untuk sisa bulan ini.',
-      }
-    }
-    return {
-      tone: 'ok',
-      label: 'Masih aman',
-      message: 'Saldo Aman kamu masih cukup untuk sisa bulan ini.',
-    }
-  })
+  /**
+   * Status warna Saldo Aman — dihitung ulang dari Saldo Aman dan Jatah Harian
+   * terkini (hijau aman / kuning menipis / merah terlampaui). Tidak pernah
+   * disimpan sebagai data finansial supaya tidak usang.
+   */
+  const status = computed(() =>
+    resolveSafeStatus({ safeBalance: safeBalance.value, dailyAllowance: dailyAllowance.value }),
+  )
 
   /** Kantong + Saldo Aman untuk halaman rincian. */
   const pockets = computed(() => [
@@ -123,6 +110,7 @@ export const useFinanceStore = defineStore('finance', () => {
       accountLabel.value = settings.accountLabel || accountLabel.value
       totalBalance.value = Number(settings.totalBalance) || 0
       savingsTarget.value = Number(settings.savingsTarget) || 0
+      autoRoundupEnabled.value = Boolean(settings.autoRoundupEnabled)
       onboarded.value = Boolean(settings.onboarded)
     }
     billPocket.value = Number(snapshot.pockets?.bill) || 0
@@ -168,12 +156,24 @@ export const useFinanceStore = defineStore('finance', () => {
     return result
   }
 
-  async function recordExpense({ name, amount, category }) {
-    const result = await persistExpense({ name, amount, category })
+  /**
+   * Pembayaran (halaman Bayar). Pembulatan dibaca dari settings di dalam
+   * transaksi Dexie, jadi UI cukup memanggil satu aksi ini.
+   */
+  async function recordPayment({ name, amount, category }) {
+    const result = await persistPayment({ name, amount, category })
     if (!result.ok) return result
 
     totalBalance.value = result.totalBalance
-    transactions.value = [result.transaction, ...transactions.value]
+    savingsPocket.value += result.roundUp
+    transactions.value = [...result.transactions, ...transactions.value]
+    return result
+  }
+
+  /** Menyimpan preferensi Pembulatan Otomatis secara persisten. */
+  async function setAutoRoundup(enabled) {
+    const result = await saveAutoRoundup(enabled)
+    if (result.ok) autoRoundupEnabled.value = result.enabled
     return result
   }
 
@@ -220,6 +220,7 @@ export const useFinanceStore = defineStore('finance', () => {
     emergencyPocket,
     savingsTarget,
     onboarded,
+    autoRoundupEnabled,
     transactions,
     amountsHidden,
     now,
@@ -236,7 +237,8 @@ export const useFinanceStore = defineStore('finance', () => {
     pockets,
     // actions
     saveSettings,
-    recordExpense,
+    recordPayment,
+    setAutoRoundup,
     recordIncome,
     allocateToSavings,
     resetDemo,

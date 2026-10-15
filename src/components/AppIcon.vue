@@ -29,6 +29,9 @@ const ICONS = {
   check: '<path d="m5.2 12.6 4.6 4.6L18.8 7"/>',
   close: '<path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8"/>',
   alert: '<path d="M12 4.6 21 19.6H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/>',
+  alertTriangle: '<path d="M12 4.6 21 19.6H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/>',
+  alertCircle: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.8v5"/><path d="M12 16h.01"/>',
+  checkCircle: '<circle cx="12" cy="12" r="8.4"/><path d="m8.4 12.2 2.5 2.5 4.7-5.1"/>',
   info: '<circle cx="12" cy="12" r="8.4"/><path d="M12 11v5.2"/><path d="M12 7.9h.01"/>',
   wallet:
     '<path d="M4 7.6A2.6 2.6 0 0 1 6.6 5h11.2A2.2 2.2 0 0 1 20 7.2v9.6a2.2 2.2 0 0 1-2.2 2.2H6.6A2.6 2.6 0 0 1 4 16.4z"/><path d="M4 8.2h16"/><path d="M15.4 13.6h1.6"/>',

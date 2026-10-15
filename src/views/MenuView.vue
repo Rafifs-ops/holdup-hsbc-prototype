@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import BaseSheet from '@/components/BaseSheet.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { initialsFrom } from '@/utils/format'
 import { useDemoData } from '@/composables/useDemoData'
 import { useMoneySheets } from '@/composables/useMoneySheets'
@@ -64,6 +65,17 @@ async function confirmReset() {
   await resetDemo()
   resetOpen.value = false
 }
+
+async function toggleRoundup(value) {
+  const result = await finance.setAutoRoundup(value)
+  if (!result.ok) {
+    ui.pushToast('Gagal menyimpan pengaturan pembulatan.', { tone: 'warn' })
+    return
+  }
+  ui.pushToast(value ? 'Pembulatan Otomatis aktif.' : 'Pembulatan Otomatis nonaktif.', {
+    tone: 'neutral',
+  })
+}
 </script>
 
 <template>
@@ -76,6 +88,34 @@ async function confirmReset() {
         <p class="profile__name">{{ finance.userName }}</p>
         <p class="profile__meta">{{ finance.accountLabel }}</p>
       </div>
+    </section>
+
+    <section class="setting card" aria-labelledby="roundup-heading">
+      <div class="setting__row">
+        <span class="setting__icon" aria-hidden="true">
+          <AppIcon name="sparkle" :size="18" />
+        </span>
+        <div class="setting__text">
+          <p id="roundup-heading" class="setting__label">Pembulatan Otomatis</p>
+          <p class="setting__desc">Bulatkan pembayaran dan sisihkan selisihnya ke Tabungan.</p>
+          <p class="setting__status">
+            <span
+              class="setting__dot"
+              :class="{ 'setting__dot--on': finance.autoRoundupEnabled }"
+              aria-hidden="true"
+            />
+            {{ finance.autoRoundupEnabled ? 'Aktif' : 'Nonaktif' }}
+          </p>
+        </div>
+        <ToggleSwitch
+          :model-value="finance.autoRoundupEnabled"
+          label="Pembulatan Otomatis"
+          @update:model-value="toggleRoundup"
+        />
+      </div>
+      <p class="setting__example">
+        Contoh: bayar Rp21.700 &rarr; dibulatkan jadi Rp22.000, Rp300 masuk ke kantong Tabungan.
+      </p>
     </section>
 
     <div class="groups">
@@ -192,6 +232,81 @@ async function confirmReset() {
 .profile__meta {
   font-size: 12.5px;
   color: var(--ink-3);
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.setting__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting__icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--brand-tint);
+  color: var(--brand-deep);
+  flex: none;
+}
+
+.setting__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.setting__label {
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.setting__desc {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+
+.setting__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.setting__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.setting__dot--on {
+  background: var(--positive);
+}
+
+.setting__example {
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-2);
 }
 
 .groups {

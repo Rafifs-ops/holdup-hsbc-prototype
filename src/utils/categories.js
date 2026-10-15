@@ -10,6 +10,18 @@ export const CATEGORIES = [
   { value: 'lainnya', label: 'Lainnya', icon: 'briefcase' },
 ]
 
+/**
+ * Kategori yang ditawarkan pada halaman Bayar — ringkas dan realistis untuk
+ * pembayaran mobile banking.
+ */
+export const PAYMENT_CATEGORIES = [
+  { value: 'belanja', label: 'Belanja', icon: 'cart' },
+  { value: 'makan', label: 'Makanan & Minuman', icon: 'coffee' },
+  { value: 'transport', label: 'Transportasi', icon: 'car' },
+  { value: 'tagihan', label: 'Tagihan', icon: 'receipt' },
+  { value: 'lainnya', label: 'Lainnya', icon: 'briefcase' },
+]
+
 const FALLBACK = { value: 'lainnya', label: 'Lainnya', icon: 'briefcase' }
 
 export function categoryMeta(value) {
