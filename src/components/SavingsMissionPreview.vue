@@ -71,13 +71,6 @@ const isComplete = computed(
       <span>Belum ada misi tabungan. Buat tujuan pertama kamu.</span>
     </RouterLink>
 
-    <dl class="pockets">
-      <div v-for="row in pocketRows" :key="row.key" class="pockets__item">
-        <dt>{{ row.label }}</dt>
-        <dd class="tnum">{{ display(row.value) }}</dd>
-      </div>
-    </dl>
-
     <p class="savings__note">
       Dana misi disimpan di kantong Tabungan, jadi tidak pernah dihitung dua kali.
     </p>
